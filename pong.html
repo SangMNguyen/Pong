@@ -4,6 +4,10 @@
         <title>Pong</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <style>
+            @font-face {
+                font-family: 'Press Start 2P', cursive;
+                src: url("https://fonts.googleapis.com/css?family=Press+Start+2P")
+            }
             html, body {
                 height: 100vh;
                 width: 100vw;
@@ -16,14 +20,20 @@
             }
         </style>
     </header>
+    <link href="https://fonts.googleapis.com/css?family=Press+Start+2P" rel="stylesheet">
     <body onload="load()">
         <script>
             var player1, player2, ball;
+            var score, line;
+            var bgMusic;
 
             function load() {
-                player1 = new component(30, 150, "#00FF40", 30, 375);
-                player2 = new component(30, 150, "#00FF40", 1540, 375);
-                ball = new component(30, 30, "#00FF40", 785, 435);
+                player1 = new component(30, 150, "#00FF40", 60, 375);
+                player2 = new component(30, 150, "#00FF40", 1510, 375);
+                line = new component(2, 900, "#00FF40", 799, 0);
+                ball = new component(30, 30, "#00FF40", 785, 435,"ball");
+                score = new component("4rem", "'Press Start 2P'", "#00FF40", 707, 150, "text");
+                bgMusic = new audio("crocrock.mp3");
                 pongCourt.start();
             }
 
@@ -37,45 +47,126 @@
                     this.interval = setInterval(updateGameArea,20);
                     window.addEventListener("keydown", move);
                     window.addEventListener("keyup", stop);
+                    //bgMusic.play();
                 },
                 clear : function() {
                     this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                },
+                stop : function() {
+                    clearInterval(this.interval);
                 }
             }
 
-            function component(width, height, color, x, y) {
+            function component(width, height, color, x, y, type) {
+                this.type = type;
                 this.width = width;
                 this.height = height;
-                this.speedX = 0;
-                this.speedY = 0;
+                this.score = 0;
+                if(this.type == "ball") {
+                    this.speedX = 12;
+                    this.speedY = 12;
+                } else {
+                    this.speedX = 0;
+                    this.speedY = 0;
+                }
                 this.x = x;
                 this.y = y;
                 this.update = function() {
                     ctx = pongCourt.context;
-                    ctx.fillStyle = color;
-                    ctx.fillRect(this.x, this.y, this.width, this.height);
+                    if(this.type == "text") {
+                        ctx.font = this.width + " " + this.height;
+                        ctx.fillStyle = color;
+                        ctx.fillText(this.text, this.x, this.y);
+                    } else {
+                        ctx.fillStyle = color;
+                        ctx.fillRect(this.x, this.y, this.width, this.height);
+                    }
                 }
                 this.newPos = function() {
                     this.x += this.speedX;
                     this.y += this.speedY;
+                    this.outOfBounds();
+                    this.win();
+                }
+                this.collide = function(player) {
+                    var ballLeft = this.x;
+                    var ballRight = this.x + this.width;
+                    var ballTop = this.y;
+                    var ballBot = this.y + this.height;
+                    var playLeft = player.x;
+                    var playRight = player.x + player.width;
+                    var playTop = player.y;
+                    var playBot = player.y + player.height;
+                    var collision = true;
+                    if((ballBot < playTop) || (ballTop > playBot) || (ballRight < playLeft) || (ballLeft > playRight)) {
+                        collision = false;
+                    }
+                    return collision;            
+                }
+                this.outOfBounds = function() {
+                    var bottom = pongCourt.canvas.height - this.height;
+                    var top = 0;
+                    if(this.type == "ball") {
+                        if(this.y > bottom) {
+                            this.y = bottom;
+                            this.speedY = this.speedY * -1;
+                        }
+                        if(this.y < top) {
+                            this.y = top;
+                            this.speedY = this.speedY * -1;
+                        }
+                    } else {
+                        if(this.y > bottom) {
+                            this.y = bottom;
+                        }
+                        if(this.y < top) {
+                            this.y = top;
+                        }
+                    }
+                }
+                this.win = function() {
+                    var left = 0;
+                    var right = pongCourt.canvas.width - this.width;
+                    if(this.x < left) {
+                        player2.score += 1;
+                        this.x = left;
+                        reset();
+                    }
+                    if(this.x > right) {
+                        player1.score += 1;
+                        this.x = right;
+                        reset();
+                    }
+                    if(player1.score == 10 || player2.score == 10) {
+                        player1.score = 0;
+                        player2.score = 0;
+                    }
                 }
             }
 
             function updateGameArea() {
                 pongCourt.clear();
+                line.update();
                 resetSpeed();
 
-                if (pongCourt.keys && pongCourt.keys[87]) {player1.speedY = -5; }
-                if (pongCourt.keys && pongCourt.keys[83]) {player1.speedY = 5; }
-                if (pongCourt.keys && pongCourt.keys[38]) {player2.speedY = -5; }
-                if (pongCourt.keys && pongCourt.keys[40]) {player2.speedY = 5; }
+                if (pongCourt.keys && pongCourt.keys[87]) {player1.speedY = -10; }
+                if (pongCourt.keys && pongCourt.keys[83]) {player1.speedY = 10; }
+                if (pongCourt.keys && pongCourt.keys[38]) {player2.speedY = -10; }
+                if (pongCourt.keys && pongCourt.keys[40]) {player2.speedY = 10; }
 
+                if(ball.collide(player1) || ball.collide(player2)) {
+                    ball.speedX = ball.speedX * -1;
+                }
                 player1.newPos();
                 player1.update();
 
                 player2.newPos();
                 player2.update();
 
+                score.text = player1.score + " " + player2.score;
+                score.update();
+
+                ball.newPos();
                 ball.update();
             }
 
@@ -89,10 +180,29 @@
                 var charCode = e.which || e.keyCode;
                 pongCourt.keys[charCode] = false;
             }
+            function reset() {
+                ball.x = 785;
+                ball.y = 435;
+            }
 
             function resetSpeed() {
                 player1.speedY = 0;
                 player2.speedY = 0;
+            }
+
+            function audio(src) {
+                this.audio = document.createElement("audio");
+                this.audio.src = src;
+                this.audio.setAttribute("preload","auto");
+                this.audio.setAttribute("controls","none");
+                this.audio.style.display = "none";
+                document.body.appendChild(this.audio);
+                this.play = function() {
+                    this.audio.play();
+                }
+                this.stop = function() {
+                    this.audio.pause();
+                }
             }
         </script>
 

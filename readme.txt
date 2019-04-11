@@ -4,6 +4,7 @@ My own version of the popular game Pong. Pong is a two player game with each pla
 Current Goals:
 - Add Sounds/Music
 - Fix Top/Bottom Collision Glitch
+- Make Trajectory Changes Based on Moving the Paddle
 - Add more modes
 
 Long-term Goals:
