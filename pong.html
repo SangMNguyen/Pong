@@ -24,8 +24,10 @@
     <body onload="load()">
         <script>
             var player1, player2, ball;
-            var score, line;
+            var score, countdown, wintext, line;
             var bgMusic;
+            var pauseOn = false;
+            var end = false;
 
             function load() {
                 player1 = new component(30, 150, "#00FF40", 60, 375);
@@ -33,6 +35,10 @@
                 line = new component(2, 900, "#00FF40", 799, 0);
                 ball = new component(30, 30, "#00FF40", 785, 435,"ball");
                 score = new component("4rem", "'Press Start 2P'", "#00FF40", 707, 150, "text");
+                countdown = new component("4rem", "'Press Start 2P'", "#00FF40", 770, 375, "text");
+                wintext = new component("3rem", "'Press Start 2P'", "#00FF40", 1200, 275, "text");
+                wintext.text = "";
+                countdown.text = "";
                 bgMusic = new audio("crocrock.mp3");
                 pongCourt.start();
             }
@@ -44,16 +50,14 @@
                     this.canvas.height = 900;
                     this.context = this.canvas.getContext("2d");
                     document.body.insertBefore(this.canvas, document.body.childNodes[0]);
-                    this.interval = setInterval(updateGameArea,20);
+                    reset();
+                    requestAnimationFrame(updateGameArea);
                     window.addEventListener("keydown", move);
                     window.addEventListener("keyup", stop);
                     //bgMusic.play();
                 },
                 clear : function() {
                     this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
-                },
-                stop : function() {
-                    clearInterval(this.interval);
                 }
             }
 
@@ -63,8 +67,17 @@
                 this.height = height;
                 this.score = 0;
                 if(this.type == "ball") {
-                    this.speedX = 12;
-                    this.speedY = 12;
+                    var randStartSpeed = randValue(4);
+                    if(randStartSpeed > 1) {
+                        this.speedX = 10;
+                    } else {
+                        this.speedX = -10;
+                    }
+                    if(randStartSpeed % 2 == 0) {
+                        this.speedY = 10;
+                    } else {
+                        this.speedY = -10;
+                    }
                 } else {
                     this.speedX = 0;
                     this.speedY = 0;
@@ -128,11 +141,21 @@
                     var left = 0;
                     var right = pongCourt.canvas.width - this.width;
                     if(this.x < left) {
+                        wintext.x = 1200;
+                        wintext.text = "P2 +1";
+                        setTimeout(function() {
+                            wintext.text = "";
+                        }, 2000);
                         player2.score += 1;
                         this.x = left;
                         reset();
                     }
                     if(this.x > right) {
+                        wintext.x = 200;
+                        wintext.text = "P1 +1";
+                        setTimeout(function() {
+                            wintext.text = "";
+                        }, 1000);
                         player1.score += 1;
                         this.x = right;
                         reset();
@@ -142,38 +165,60 @@
                         player2.score = 0;
                     }
                 }
+                this.freeze = function() {
+                    this.speedY = 0;
+                    this.speedX = 0;
+                }
             }
 
-            function updateGameArea() {
+            function updateGameArea(time) {
                 pongCourt.clear();
-                line.update();
-                resetSpeed();
+                //line.update();
+                player1.freeze();
+                player2.freeze();
 
-                if (pongCourt.keys && pongCourt.keys[87]) {player1.speedY = -10; }
-                if (pongCourt.keys && pongCourt.keys[83]) {player1.speedY = 10; }
-                if (pongCourt.keys && pongCourt.keys[38]) {player2.speedY = -10; }
-                if (pongCourt.keys && pongCourt.keys[40]) {player2.speedY = 10; }
+                // Controls
+                if (pongCourt.keys && pongCourt.keys[87]) {player1.speedY = -8; }
+                if (pongCourt.keys && pongCourt.keys[83]) {player1.speedY = 8; }
+                if (pongCourt.keys && pongCourt.keys[38]) {player2.speedY = -8; }
+                if (pongCourt.keys && pongCourt.keys[40]) {player2.speedY = 8; }
+
 
                 if(ball.collide(player1) || ball.collide(player2)) {
                     ball.speedX = ball.speedX * -1;
                 }
+
                 player1.newPos();
                 player1.update();
 
                 player2.newPos();
                 player2.update();
+                
+                countdown.update();
+                wintext.update();
 
                 score.text = player1.score + " " + player2.score;
                 score.update();
 
                 ball.newPos();
                 ball.update();
+
+                if(!end && !pauseOn) {
+                    requestAnimationFrame(updateGameArea);
+                }
             }
 
             function move(e) {
                 var charCode = e.which || e.keyCode;
-                pongCourt.keys = (pongCourt.keys || []);
-                pongCourt.keys[charCode] = true;
+                if(charCode == 27 || charCode == 32) {
+                    pauseOn = !pauseOn;
+                    if(!pauseOn) {
+                        requestAnimationFrame(updateGameArea);
+                    }
+                } else {
+                    pongCourt.keys = (pongCourt.keys || []);
+                    pongCourt.keys[charCode] = true;
+                }
             }
 
             function stop(e) {
@@ -183,13 +228,47 @@
             function reset() {
                 ball.x = 785;
                 ball.y = 435;
+                ball.freeze();
+
+                countdown.text = 3;
+                var timer = setInterval(function() {
+                    countdown.text--;
+                    if (countdown.text < 1) {
+                        clearInterval(timer);
+                        countdown.text = "GO!";
+                        countdown.x = 710;
+                        setTimeout(function() {
+                            countdown.text = "";
+                            countdown.x = 770;
+                        },1000);
+                    }
+                }, 1000);
+
+                setTimeout(function() {
+                    if(player1.score > player2.score) {
+                        ball.speedX = -10;
+                    } else if(player1.score == player2.score) {
+                        var coinflipX = randValue(2);
+                        if(coinflipX) {
+                            ball.speedX = 10;
+                        } else {
+                            ball.speedX = -10;
+                        }
+                    } else {
+                        ball.speedX = 10;
+                    }
+                    var coinflipY = randValue(2);
+                    if(coinflipY) {
+                        ball.speedY = 10;
+                    } else {
+                        ball.speedY = -10;
+                    }
+                }, 3000);
             }
 
-            function resetSpeed() {
-                player1.speedY = 0;
-                player2.speedY = 0;
+            function randValue(range) {
+                return Math.floor(Math.random() * range);
             }
-
             function audio(src) {
                 this.audio = document.createElement("audio");
                 this.audio.src = src;
