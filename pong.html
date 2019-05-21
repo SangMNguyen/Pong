@@ -9,27 +9,111 @@
                 src: url("https://fonts.googleapis.com/css?family=Press+Start+2P")
             }
             html, body {
-                height: 100vh;
-                width: 100vw;
+                height: 100%;
+                width: 100%;
                 overflow: hidden;
+                display: flex;
+                justify-content: center;
                 text-align: center;
+                font-family: 'Press Start 2P', cursive;
             }
             canvas {
+                position: absolute;
                 border: 0.1rem solid #00FF40;
                 background-color:black;
+            }
+            #title {
+                font-size: 10rem; 
+                position: absolute; 
+                z-index: 90; 
+                color:#00FF40;
+                transition: 0.3s;
+            }
+            #background {
+                position: absolute;
+                z-index: 50;
+                height: 900px;
+                width: 1600px;
+                background-color: black;
+            }
+            .menu {
+                position: absolute;
+                top: 300px;
+                z-index: 99;
+                background-color: black;
+                color: #00FF40;
+                border: 1rem solid #00FF40;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                transition: 0.3s;
+            }
+            .menuButton {
+                outline: none;
+                height: 10rem;
+                width: 20rem;
+                font-family: inherit;
+                font-size: 2rem;
+                background-color: inherit;
+                color: inherit;
+                border: inherit;
+                transition: 0.3s;
+                opacity: 1;
+            }
+            .menuButton:hover {
+                background-color: #00FF40;
+                color: black;
+                transition: 0.3s;
+            }
+            #backButton {
+                position: absolute;
+                border: none;
+                outline: none;
+                transform: scale(0);
+                font-family: inherit;
+                font-size: 5rem;
+                top: 10rem;
+                left: 20rem;
+                z-index: 99;
+                color: #00FF40;
+                background-color: black;
+                padding: 0rem;
+                text-shadow: -0.1rem 0 #00FF40, 0 0.1rem #00FF40, 0.1rem 0 #00FF40, 0 -0.1rem #00FF40;
+                transition: 0.3s;
+            }
+            #backButton:hover {
+                color: black;
+                transition: 0.3s;
+            }
+            .info {
+                opacity: 0;
+                position: absolute;
+                z-index: 50;
+                padding: 0;
+                color: #00FF40;
+                font-family: inherit;
+                font-size: 5rem;
+                top: 10rem;
+                transition: 0.3s;
             }
         </style>
     </header>
     <link href="https://fonts.googleapis.com/css?family=Press+Start+2P" rel="stylesheet">
-    <body onload="load()">
+    <body>
         <script>
             var player1, player2, ball;
             var score, countdown, wintext, line;
-            var bgMusic;
+            var bgMusic, hitSound;
             var pauseOn = false;
             var end = false;
 
             function load() {
+                end = false;
+                document.getElementById("background").style.opacity = 0;
+                document.getElementById("mainMenu").style.opacity = 0;
+                document.getElementById("mainMenu").style.transform = "scale(0)";
+                document.getElementById("title").style.opacity = 0;
                 player1 = new component(30, 150, "#00FF40", 60, 375);
                 player2 = new component(30, 150, "#00FF40", 1510, 375);
                 line = new component(2, 900, "#00FF40", 799, 0);
@@ -40,6 +124,7 @@
                 wintext.text = "";
                 countdown.text = "";
                 bgMusic = new audio("crocrock.mp3");
+                hitSound = new audio("collide.wav");
                 pongCourt.start();
             }
 
@@ -185,6 +270,7 @@
 
 
                 if(ball.collide(player1) || ball.collide(player2)) {
+                    hitSound.play();
                     ball.speedX = ball.speedX * -1;
                 }
 
@@ -210,10 +296,19 @@
 
             function move(e) {
                 var charCode = e.which || e.keyCode;
-                if(charCode == 27 || charCode == 32) {
+                if(charCode == 27) {
                     pauseOn = !pauseOn;
                     if(!pauseOn) {
+                        document.getElementById("background").style.opacity = 0;
+                        document.getElementById("pauseMenu").style.opacity = 0;
+                        document.getElementById("pauseMenu").style.transform = "scale(0)";
+                        document.getElementById("title").style.opacity = 0;
                         requestAnimationFrame(updateGameArea);
+                    } else {
+                        document.getElementById("background").style.opacity = 0.5;
+                        document.getElementById("pauseMenu").style.opacity = 1;
+                        document.getElementById("pauseMenu").style.transform = "scale(1)";
+                        document.getElementById("title").style.opacity = 1;
                     }
                 } else {
                     pongCourt.keys = (pongCourt.keys || []);
@@ -223,6 +318,9 @@
 
             function stop(e) {
                 var charCode = e.which || e.keyCode;
+                if(charCode == 27) {
+                    return;
+                }
                 pongCourt.keys[charCode] = false;
             }
             function reset() {
@@ -283,8 +381,65 @@
                     this.audio.pause();
                 }
             }
-        </script>
 
-        <p>Test</p>
+            function change(pageName) {
+                if(pageName == 'back') {
+                    document.getElementById("howTo").style.opacity = 0;
+                    document.getElementById("settings").style.opacity = 0;
+                    document.getElementById("mainMenu").style.opacity = 1;
+                    document.getElementById("mainMenu").style.transform = "scale(1)";
+                    document.getElementById("backButton").style.transform = "scale(0)";
+                    document.getElementById("title").style.opacity = 1;
+                }
+                else {
+                    document.getElementById("mainMenu").style.opacity = 0;
+                    document.getElementById("mainMenu").style.transform = "scale(0)";
+                    document.getElementById("backButton").style.transform = "scale(1)";
+                    document.getElementById(pageName).style.opacity = 1;
+                    document.getElementById("title").style.opacity = 0;
+                }
+            }
+
+            function unpause() {
+                pauseOn = false;
+                document.getElementById("background").style.opacity = 0;
+                document.getElementById("pauseMenu").style.opacity = 0;
+                document.getElementById("pauseMenu").style.transform = "scale(0)";
+                document.getElementById("title").style.opacity = 0;
+                requestAnimationFrame(updateGameArea);
+            }
+            
+            function quit() {
+                pongCourt.clear();
+                pauseOn = false;
+                end = true;
+                document.getElementById("background").style.opacity = 1;
+                document.getElementById("pauseMenu").style.opacity = 0;
+                document.getElementById("pauseMenu").style.transform = "scale(0)";
+                document.getElementById("mainMenu").style.opacity = 1;
+                document.getElementById("mainMenu").style.transform = "scale(1)";
+            }
+        </script>
+        <div id="background"></div>
+        <h1 id="title">PONG</h1>
+        <div class="menu" id="mainMenu">
+            <button class="menuButton" onclick="load()">Play Game</button>
+            <button class="menuButton" onclick="change('howTo')">How to Play</button>
+            <button class="menuButton" onclick="change('settings')">Settings</button>
+        </div>
+        <button id="backButton" onclick="change('back')">X</button>
+        <div class="info" id="howTo">
+            <h1 style="font-size: 5rem;">Controls</h1>
+            <p style="font-size: 3rem;">Player 1<br><br>W -> UP / S -> DOWN<br><br>Player 2<br><br>&#8593; -> UP / &#8595; -> DOWN<br><br>ESC -> PAUSE</p>
+        </div>
+        <div class="info" id="settings">
+            <h1 style="font-size: 5rem;">Settings</h1>
+            
+        </div>
+        <div id="pauseMenu" class="menu" style="opacity:0; transform:scale(0)">
+            <button class="menuButton" onclick="unpause()">Resume</button>
+            <button class="menuButton">Options</button>
+            <button class="menuButton" onclick="quit()">Quit to Main Menu</button>
+        </div>
     </body>
 </html>
