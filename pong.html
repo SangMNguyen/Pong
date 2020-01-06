@@ -57,7 +57,7 @@
                 font-size: 2rem;
                 background-color: inherit;
                 color: inherit;
-                border: inherit;
+                border: 1rem solid #00FF40;
                 transition: 0.3s;
                 opacity: 1;
             }
@@ -95,6 +95,62 @@
                 font-family: inherit;
                 font-size: 5rem;
                 top: 10rem;
+                transition: 0.3s;
+            }
+            #gameMenu {
+                opacity: 0;
+                display: flex;
+                flex-direction: row;
+            }
+            #gameMenu h1 {
+                z-index: 99;
+                padding: 0px 90px;
+                position: relative;
+                font-size: 4rem;
+                color: #00FF40;
+                display: inline-flex;
+            }
+            .sideMenu {
+                top: 150px;
+                position: relative;
+                z-index: 99;
+                color: #00FF40;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                transition: 0.3s;
+            }
+            #volume {
+                -webkit-appearance: none;
+                appearance: none;
+                height: 10px;
+                outline: none;
+                background:#00FF40;
+            }
+            #volume::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                appearance: none;
+                height: 30px;
+                width: 10px;
+                background: #00FF40;
+            }
+            #training {
+                position: absolute;
+                z-index: 99;
+                left: 760px;
+                top: 700px;
+                border: none;
+                outline: none;
+                font-family: inherit;
+                padding: 1.5rem 1rem;
+                background-color: black;
+                color: #00FF40;
+                font-size: 3rem;
+                transition: 0.3s;
+            }
+            #training:hover {
+                background-color: #00FF40;
+                color: black;
                 transition: 0.3s;
             }
         </style>
@@ -386,6 +442,8 @@
                 if(pageName == 'back') {
                     document.getElementById("howTo").style.opacity = 0;
                     document.getElementById("settings").style.opacity = 0;
+                    document.getElementById("gameMenu").style.opacity = 0;
+
                     document.getElementById("mainMenu").style.opacity = 1;
                     document.getElementById("mainMenu").style.transform = "scale(1)";
                     document.getElementById("backButton").style.transform = "scale(0)";
@@ -395,8 +453,9 @@
                     document.getElementById("mainMenu").style.opacity = 0;
                     document.getElementById("mainMenu").style.transform = "scale(0)";
                     document.getElementById("backButton").style.transform = "scale(1)";
-                    document.getElementById(pageName).style.opacity = 1;
                     document.getElementById("title").style.opacity = 0;
+                    
+                    document.getElementById(pageName).style.opacity = 1;
                 }
             }
 
@@ -407,6 +466,12 @@
                 document.getElementById("pauseMenu").style.transform = "scale(0)";
                 document.getElementById("title").style.opacity = 0;
                 requestAnimationFrame(updateGameArea);
+            }
+
+            function saveSettings() {
+                localStorage['volume'] = document.getElementById("volume").value;
+                localStorage['screensize'] = document.getElementById("screensize").value;
+                localStorage['controls'] = document.getElementById("controls").value;
             }
             
             function quit() {
@@ -427,6 +492,19 @@
             <button class="menuButton" onclick="change('howTo')">How to Play</button>
             <button class="menuButton" onclick="change('settings')">Settings</button>
         </div>
+        <div id="gameMenu">
+            <div class="sideMenu">
+                <h1>Classic</h1>
+                <button class="menuButton" onclick="classMode(1)">1-Player</button>
+                <button class="menuButton" onclick="classMode(2)">2-Player</button>
+            </div>
+            <div class="sideMenu">
+                <h1>Newer</h1>
+                <button class="menuButton" onclick="newMode(1)">1-Player</button>
+                <button class="menuButton" onclick="newMode(2)">2-Player</button>
+            </div>
+            <button id="training" onclick="trainMode()">Training</button>
+        </div>
         <button id="backButton" onclick="change('back')">X</button>
         <div class="info" id="howTo">
             <h1 style="font-size: 5rem;">Controls</h1>
@@ -434,11 +512,19 @@
         </div>
         <div class="info" id="settings">
             <h1 style="font-size: 5rem;">Settings</h1>
-            
+            <p style="font-size: 3rem;">Volume: <input type="range" min="1" max="100" value="50" id="volume"><br><br>
+            Screen Size: 1280x720<br><br>Controls:
+            <select size="1" id="controls">
+                <option value="default">Default</option>
+                <option value="swap">Swap</option>
+                <option value="intimate">Intimate</option>
+            </select><br><br>
+            <button onclick="saveSettings()" class="menuButton">Save Settings</button>
+            </p> 
         </div>
         <div id="pauseMenu" class="menu" style="opacity:0; transform:scale(0)">
             <button class="menuButton" onclick="unpause()">Resume</button>
-            <button class="menuButton">Options</button>
+            <button class="menuButton" onclick="change('settings')">Options</button>
             <button class="menuButton" onclick="quit()">Quit to Main Menu</button>
         </div>
     </body>
